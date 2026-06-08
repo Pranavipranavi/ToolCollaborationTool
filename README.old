@@ -24,7 +24,7 @@ TaskFlow is a full-stack team collaboration and project management platform buil
 
 ## Project Structure
 
-```
+`
 client/
   src/
     components/
@@ -43,52 +43,56 @@ server/
     routes/           # Express route definitions
     services/         # Socket and notification business logic
     utils/            # Error helpers, async wrapper, token utilities
-```
+`
 
 ## Local Setup
 
 1. Install dependencies for both services:
 
-```bash
+`ash
 npm run install:all
-```
+`
 
 2. Create local environment files:
 
-```bash
+`ash
 copy server\.env.example server\.env
 copy client\.env.example client\.env
-```
+`
 
-3. Update `server/.env` with your MongoDB and authentication credentials.
-4. Update `client/.env` with frontend API and socket URLs.
+3. Update server/.env with your MongoDB and authentication credentials.
+4. Update client/.env with frontend API and socket URLs.
 
 5. Run development mode:
 
-```bash
+`ash
 npm run dev
-```
+`
 
 6. Open the application in your browser:
 
-```text
+`	ext
 http://localhost:5173
-```
+`
 
 ## Backend Scripts
 
 From the workspace root, available commands are:
 
-- `npm run dev` - starts both server and client concurrently
-- `npm run build` - builds the client and verifies server syntax
-- `npm run start` - starts the backend server only
-- `npm run install:all` - installs dependencies for the root, client, and server
+- 
+pm run dev - starts both server and client concurrently
+- 
+pm run build - builds the client and verifies server syntax
+- 
+pm run start - starts the backend server only
+- 
+pm run install:all - installs dependencies for the root, client, and server
 
 ## Environment Variables
 
-### Backend (`server/.env`)
+### Backend (server/.env)
 
-```env
+`env
 PORT=5000
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173
@@ -98,14 +102,14 @@ JWT_SECRET=<long-random-secret>
 JWT_EXPIRES_IN=7d
 GOOGLE_CLIENT_ID=<google-oauth-client-id>
 GOOGLE_CLIENT_SECRET=<google-oauth-client-secret>
-```
+`
 
-### Frontend (`client/.env`)
+### Frontend (client/.env)
 
-```env
+`env
 VITE_API_URL=http://localhost:5000/api
 VITE_SOCKET_URL=http://localhost:5000
-```
+`
 
 ## Authentication & Security
 
@@ -117,16 +121,16 @@ VITE_SOCKET_URL=http://localhost:5000
 
 ## Backend API Overview
 
-The backend serves REST endpoints under `/api` with major areas including:
+The backend serves REST endpoints under /api with major areas including:
 
-- `/api/auth` - registration, login, logout, Google OAuth, password reset
-- `/api/workspaces` - workspace creation, membership, and invitations
-- `/api/projects` - project CRUD and workspace project listings
-- `/api/tasks` - task CRUD, status updates, assignments, drag-and-drop ordering
-- `/api/comments` - task comment creation and retrieval
-- `/api/notifications` - notification generation and read state
-- `/api/search` - search tasks, projects, and workspaces
-- `/api/analytics` - executive dashboard statistics and reports
+- /api/auth - registration, login, logout, Google OAuth, password reset
+- /api/workspaces - workspace creation, membership, and invitations
+- /api/projects - project CRUD and workspace project listings
+- /api/tasks - task CRUD, status updates, assignments, drag-and-drop ordering
+- /api/comments - task comment creation and retrieval
+- /api/notifications - notification generation and read state
+- /api/search - search tasks, projects, and workspaces
+- /api/analytics - executive dashboard statistics and reports
 
 ## Frontend Pages
 
@@ -144,14 +148,15 @@ The backend serves REST endpoints under `/api` with major areas including:
 ## Notes
 
 - The app uses Socket.io for real-time collaboration updates between users.
-- The backend uses MongoDB Atlas; the app expects a valid `MONGODB_URI`.
-- `client/src/lib/api.js` centralizes API calls and authorization handling.
-- `server/src/config/passport.js` configures Google OAuth and callback handling.
+- The backend uses MongoDB Atlas; the app expects a valid MONGODB_URI.
+- client/src/lib/api.js centralizes API calls and authorization handling.
+- server/src/config/passport.js configures Google OAuth and callback handling.
 
 ## Recommended Workflow
 
 1. Configure environment variables.
-2. Start the server and client together using `npm run dev`.
+2. Start the server and client together using 
+pm run dev.
 3. Register a user or login with Google.
 4. Create a workspace, invite members, add a project, and manage tasks via the Kanban board.
 
