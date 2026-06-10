@@ -14,6 +14,13 @@ function requiredInProduction(name, value) {
   return value;
 }
 
+function withDevelopmentFallback(name, fallback) {
+  const value = process.env[name];
+  if (value) return value;
+  if (isProduction) return requiredInProduction(name, undefined);
+  return fallback;
+}
+
 function assertProductionUrl(name, value) {
   if (!isProduction || !value) return;
   let parsed;
@@ -33,12 +40,13 @@ function assertMongoUri(value) {
   }
 }
 
-const clientUrl = stripTrailingSlash(requiredInProduction("CLIENT_URL", process.env.CLIENT_URL || (isProduction ? undefined : "http://localhost:5173")));
-const serverUrl = stripTrailingSlash(requiredInProduction("SERVER_URL", process.env.SERVER_URL || (isProduction ? undefined : `http://localhost:${process.env.PORT || 5000}`)));
+const clientUrl = stripTrailingSlash(withDevelopmentFallback("CLIENT_URL", "http://localhost:5173"));
+const serverUrl = stripTrailingSlash(withDevelopmentFallback("SERVER_URL", `http://localhost:${process.env.PORT || 5000}`));
 const mongoUri = requiredInProduction("MONGODB_URI", process.env.MONGODB_URI);
 const jwtSecret = requiredInProduction("JWT_SECRET", process.env.JWT_SECRET || (isProduction ? undefined : "development-taskflow-secret"));
 const googleClientId = requiredInProduction("GOOGLE_CLIENT_ID", process.env.GOOGLE_CLIENT_ID);
 const googleClientSecret = requiredInProduction("GOOGLE_CLIENT_SECRET", process.env.GOOGLE_CLIENT_SECRET);
+const googleCallbackUrl = `${serverUrl}/api/auth/google/callback`;
 
 assertProductionUrl("CLIENT_URL", clientUrl);
 assertProductionUrl("SERVER_URL", serverUrl);
@@ -69,5 +77,5 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   googleClientId,
   googleClientSecret,
-  googleCallbackUrl: `${serverUrl}/api/auth/google/callback`,
+  googleCallbackUrl,
 };

@@ -18,4 +18,5 @@ await connectDb();
 
 server.listen(env.port, () => {
   console.log(`TaskFlow API running on port ${env.port}`);
+  console.log(`Google OAuth callback URL: ${env.googleCallbackUrl}`);
 });
