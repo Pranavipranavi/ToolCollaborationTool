@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import Button from "../components/ui/Button";
-import { authApi } from "../lib/api";
+import { authApi, workspaceApi } from "../lib/api";
+import { clientEnv } from "../lib/env";
 import { useTaskflowStore } from "../store/useTaskflowStore";
 
 export default function Login() {
@@ -13,14 +14,21 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const inviteToken = new URLSearchParams(window.location.search).get("invite");
+  const oauthFailed = new URLSearchParams(window.location.search).get("oauth") === "failed";
+  const googleUrl = `${clientEnv.apiUrl}/auth/google${inviteToken ? `?invite=${encodeURIComponent(inviteToken)}` : ""}`;
   const loginMutation = useMutation({
-    mutationFn: authApi.login,
+    mutationFn: async (payload) => {
+      const data = await authApi.login(payload);
+      if (inviteToken) await workspaceApi.acceptInvitation(inviteToken);
+      return data;
+    },
     onSuccess: (data) => {
       login(data.user);
-      navigate("/", { replace: true });
+      navigate(inviteToken ? "/workspace?invite=accepted" : "/dashboard", { replace: true });
     },
-    onError: () => {
-      setError("Login failed. Check credentials or API configuration.");
+    onError: (requestError) => {
+      setError(requestError?.response?.data?.message || "Login failed. Check credentials or API configuration.");
     },
   });
 
@@ -36,7 +44,8 @@ export default function Login() {
             </div>
           </div>
           <h1 className="text-4xl font-bold tracking-normal">Welcome back</h1>
-          <p className="mt-3 text-slate-500 dark:text-slate-400">Sign in to plan sprints, move work forward, and keep every teammate aligned.</p>
+          <p className="mt-3 text-slate-500 dark:text-slate-400">{inviteToken ? "Sign in to accept your workspace invitation and join the team." : "Sign in to plan sprints, move work forward, and keep every teammate aligned."}</p>
+          {oauthFailed && <p className="mt-4 rounded-lg bg-rose-50 p-3 text-sm font-semibold text-rose-700 dark:bg-rose-950 dark:text-rose-200">Google login could not be completed. Check the OAuth callback URL and try again.</p>}
           <form
             className="mt-8 space-y-4"
             onSubmit={(event) => {
@@ -64,12 +73,12 @@ export default function Login() {
           </form>
           <Link to="/forgot-password" className="mt-3 inline-flex text-sm font-semibold text-primary-light dark:text-primary-dark">Forgot password?</Link>
           <div className="mt-4">
-            <a className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold dark:border-slate-800 dark:bg-slate-900" href={`${import.meta.env.VITE_API_URL ?? "http://localhost:5000/api"}/auth/google`}>
+            <a className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold dark:border-slate-800 dark:bg-slate-900" href={googleUrl}>
               <Mail size={16} /> Google
             </a>
           </div>
           <p className="mt-6 text-sm text-slate-500">
-            New here? <Link to="/register" className="font-semibold text-primary-light dark:text-primary-dark">Create an account</Link>
+            New here? <Link to={inviteToken ? `/register?invite=${encodeURIComponent(inviteToken)}` : "/register"} className="font-semibold text-primary-light dark:text-primary-dark">Create an account</Link>
           </p>
         </motion.div>
       </section>

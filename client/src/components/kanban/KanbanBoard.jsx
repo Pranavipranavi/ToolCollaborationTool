@@ -9,20 +9,25 @@ import TaskDetailModal from "./TaskDetailModal";
 
 const statusOrder = ["To Do", "In Progress", "Review", "Completed"];
 
-export default function KanbanBoard({ activeProject, activeWorkspaceId, members, tasks, loading }) {
+export default function KanbanBoard({ activeProject, activeWorkspaceId, currentRole, currentUserId, members, tasks, loading }) {
   const [selectedTask, setSelectedTask] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [draft, setDraft] = useState({ title: "", description: "", priority: "Medium", assignedUser: "", dueDate: "" });
   const taskMutations = useTaskMutations(activeWorkspaceId, activeProject?.id);
+  const canManageTasks = ["Owner", "Admin"].includes(currentRole);
   const columns = statusOrder.map((status) => ({
     id: status,
     title: status,
     tasks: tasks.filter((task) => task.status === status),
   }));
 
+  function canMoveTask(task) {
+    return canManageTasks || (currentRole === "Member" && task.assignedUser === currentUserId);
+  }
+
   function createTask(event) {
     event.preventDefault();
-    if (!draft.title.trim()) return;
+    if (!draft.title.trim() || !canManageTasks) return;
     taskMutations.create.mutate({
       title: draft.title.trim(),
       description: draft.description.trim() || "No description provided.",
@@ -40,7 +45,10 @@ export default function KanbanBoard({ activeProject, activeWorkspaceId, members,
 
   function handleDragEnd(result) {
     if (!result.destination) return;
+    const task = tasks.find((item) => item.id === result.draggableId);
+    if (!task || !canMoveTask(task)) return;
     const nextStatus = result.destination.droppableId;
+    if (task.status === nextStatus) return;
     taskMutations.update.mutate({ taskId: result.draggableId, payload: { status: nextStatus } });
   }
 
@@ -52,12 +60,14 @@ export default function KanbanBoard({ activeProject, activeWorkspaceId, members,
           <h1 className="mt-1 text-3xl font-bold tracking-normal text-slate-950 dark:text-white">{activeProject?.title}</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{activeProject?.description}</p>
         </div>
-        <Button onClick={() => setShowCreate(true)} disabled={!activeProject}>
-          <Plus size={17} /> Add task
-        </Button>
+        {canManageTasks && (
+          <Button onClick={() => setShowCreate(true)} disabled={!activeProject}>
+            <Plus size={17} /> Add task
+          </Button>
+        )}
       </div>
 
-      {showCreate && (
+      {showCreate && canManageTasks && (
         <section className="mb-5 rounded-lg border border-slate-200 bg-white p-4 shadow-soft dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-bold text-slate-950 dark:text-white">Create task</h2>
@@ -84,12 +94,20 @@ export default function KanbanBoard({ activeProject, activeWorkspaceId, members,
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="flex gap-4 overflow-x-auto pb-4">
             {columns.map((column) => (
-              <KanbanColumn key={column.id} column={column} members={members} onOpenTask={setSelectedTask} />
+              <KanbanColumn key={column.id} column={column} members={members} canMoveTask={canMoveTask} onOpenTask={setSelectedTask} />
             ))}
           </div>
         </DragDropContext>
       </motion.div>
-      <TaskDetailModal task={selectedTask} activeWorkspaceId={activeWorkspaceId} activeProjectId={activeProject?.id} members={members} onClose={() => setSelectedTask(null)} />
+      <TaskDetailModal
+        task={selectedTask}
+        activeWorkspaceId={activeWorkspaceId}
+        activeProjectId={activeProject?.id}
+        currentRole={currentRole}
+        currentUserId={currentUserId}
+        members={members}
+        onClose={() => setSelectedTask(null)}
+      />
     </div>
   );
 }

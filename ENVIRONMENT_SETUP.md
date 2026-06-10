@@ -23,8 +23,8 @@ Generated from the actual frontend and backend source code after the authenticat
 | `JWT_EXPIRES_IN` | Optional | `server/src/config/env.js`, `server/src/utils/tokens.js` | JWT lifetime passed to `jsonwebtoken`. | `7d` |
 | `GOOGLE_CLIENT_ID` | Required for Google OAuth | `server/src/config/env.js`, `server/src/config/passport.js` | Registers the Passport Google OAuth strategy. | `123456.apps.googleusercontent.com` |
 | `GOOGLE_CLIENT_SECRET` | Required for Google OAuth | `server/src/config/env.js`, `server/src/config/passport.js` | Secret used by the backend Passport OAuth callback exchange. | `GOCSPX-your-secret` |
-| `VITE_API_URL` | Required for deployed frontend, optional locally | `client/src/lib/api.js`, `client/src/pages/Login.jsx` | Frontend API base URL and Google login button target. | `http://localhost:5000/api` |
-| `VITE_SOCKET_URL` | Required for deployed frontend, optional locally | `client/src/lib/socket.js` | Socket.io server URL. | `http://localhost:5000` |
+| `VITE_API_URL` | Required for deployed frontend, optional locally | `client/src/lib/env.js`, `client/src/lib/api.js`, `client/src/pages/Login.jsx` | Frontend API base URL and Google login button target. | `https://your-render-service.onrender.com/api` |
+| `VITE_SOCKET_URL` | Required for deployed frontend, optional locally | `client/src/lib/env.js`, `client/src/lib/socket.js` | Socket.io server URL. | `https://your-render-service.onrender.com` |
 | `import.meta.env.DEV` | Built-in, do not set manually | `client/src/lib/silenceKnownDevWarnings.js` | Vite development-mode flag for warning filtering. | Managed by Vite |
 
 ## Removed Variables
@@ -64,6 +64,34 @@ Provide these for full local functionality:
 - Google OAuth `GOOGLE_CLIENT_SECRET`.
 
 No SMTP credentials are required.
+
+## Production Deployment Values
+
+Set these in Vercel:
+
+```env
+VITE_API_URL=https://your-render-service.onrender.com/api
+VITE_SOCKET_URL=https://your-render-service.onrender.com
+```
+
+Set these in Render:
+
+```env
+NODE_ENV=production
+CLIENT_URL=https://your-taskflow-app.vercel.app
+SERVER_URL=https://your-render-service.onrender.com
+MONGODB_URI=mongodb+srv://YOUR_USER:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/taskflow?retryWrites=true&w=majority
+JWT_SECRET=replace-with-at-least-32-random-characters
+JWT_EXPIRES_IN=7d
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+Google Cloud Console must include this production authorized redirect URI:
+
+```text
+https://your-render-service.onrender.com/api/auth/google/callback
+```
 
 ## Local Setup Steps
 

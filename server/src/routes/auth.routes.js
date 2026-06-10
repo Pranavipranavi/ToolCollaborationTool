@@ -23,6 +23,7 @@ import {
 } from "../controllers/auth.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/error.middleware.js";
+import { acceptWorkspaceInvitation } from "../services/invitation.service.js";
 import { ApiError } from "../utils/ApiError.js";
 
 export const authRouter = express.Router();
@@ -62,11 +63,24 @@ function requireOAuthProvider(provider) {
   };
 }
 
-authRouter.get("/google", requireOAuthProvider("google"), passport.authenticate("google", { scope: ["profile", "email"] }));
+authRouter.get("/google", requireOAuthProvider("google"), (req, res, next) => {
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    state: typeof req.query.invite === "string" ? req.query.invite : undefined,
+  })(req, res, next);
+});
 authRouter.get("/google/callback", requireOAuthProvider("google"), (req, res, next) => {
-  passport.authenticate("google", { session: false }, (error, user) => {
+  passport.authenticate("google", { session: false }, async (error, user) => {
     if (error || !user) return res.redirect(`${env.clientUrl}/login?oauth=failed`);
     req.user = user;
+    if (typeof req.query.state === "string" && req.query.state) {
+      try {
+        await acceptWorkspaceInvitation({ token: req.query.state, user });
+        req.oauthRedirectPath = "/workspace?invite=accepted";
+      } catch (_inviteError) {
+        req.oauthRedirectPath = "/workspace?invite=failed";
+      }
+    }
     return oauthSuccess(req, res, next);
   })(req, res, next);
 });

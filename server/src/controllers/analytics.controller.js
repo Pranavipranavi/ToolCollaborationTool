@@ -2,11 +2,18 @@ import { Activity } from "../models/Activity.js";
 import { Project } from "../models/Project.js";
 import { Task } from "../models/Task.js";
 import { Workspace } from "../models/Workspace.js";
+import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const dashboard = asyncHandler(async (req, res) => {
   const workspaces = await Workspace.find({ "members.user": req.user._id }).select("_id members");
-  const workspaceIds = workspaces.map((workspace) => workspace._id);
+  let scopedWorkspaces = workspaces;
+  if (req.query.workspaceId) {
+    scopedWorkspaces = workspaces.filter((workspace) => workspace._id.toString() === req.query.workspaceId);
+    if (!scopedWorkspaces.length) throw new ApiError(403, "You are not a member of this workspace");
+  }
+
+  const workspaceIds = scopedWorkspaces.map((workspace) => workspace._id);
   const [projects, tasks, activities] = await Promise.all([
     Project.find({ workspace: { $in: workspaceIds } }),
     Task.find({ workspace: { $in: workspaceIds } }).populate("assignedUser", "name email avatar"),

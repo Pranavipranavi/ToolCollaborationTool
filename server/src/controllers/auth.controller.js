@@ -23,11 +23,18 @@ export const loginRules = [body("email").isEmail().normalizeEmail(), body("passw
 export const securityQuestionRules = [body("email").isEmail().normalizeEmail()];
 export const securityAnswerRules = [body("email").isEmail().normalizeEmail(), body("securityAnswer").trim().isLength({ min: 2, max: 120 })];
 export const resetPasswordRules = [body("resetToken").notEmpty(), body("password").isLength({ min: 8 })];
-export const profileRules = [body("name").optional().trim().notEmpty(), body("avatar").optional().isURL()];
+export const profileRules = [body("name").optional().trim().notEmpty(), body("avatar").optional({ values: "falsy" }).isURL()];
 export const passwordRules = [body("currentPassword").notEmpty(), body("newPassword").isLength({ min: 8 })];
 
 function publicUser(user) {
-  return { id: user._id, name: user.name, email: user.email, avatar: user.avatar, joinedAt: user.createdAt };
+  const seed = encodeURIComponent(user.name || user.email || "TaskFlow");
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${seed}`,
+    joinedAt: user.createdAt,
+  };
 }
 
 function hashResetToken(token) {
@@ -39,9 +46,40 @@ function makeUsername(email) {
   return `${base}-${crypto.randomBytes(4).toString("hex")}`;
 }
 
+async function ensureDefaultWorkspace(user) {
+  const existingWorkspace = await Workspace.exists({ "members.user": user._id });
+  if (existingWorkspace) return;
+
+  await Workspace.create({
+    name: `${user.name}'s Workspace`,
+    description: "Your TaskFlow workspace",
+    owner: user._id,
+    inviteCode: crypto.randomBytes(8).toString("hex"),
+    members: [{ user: user._id, role: "Owner" }],
+  });
+}
+
 export const register = asyncHandler(async (req, res) => {
-  const existing = await User.findOne({ email: req.body.email });
-  if (existing) throw new ApiError(409, "Email is already registered");
+  const existing = await User.findOne({ email: req.body.email }).select("+password +securityAnswerHash securityQuestion providers username");
+  if (existing) {
+    const hasUsableCredentials = Boolean(existing.password || existing.securityAnswerHash || existing.providers?.google);
+    if (hasUsableCredentials) {
+      const message = existing.providers?.google && !existing.password ? "This email is already registered with Google. Use Google login." : "Email is already registered";
+      throw new ApiError(409, message);
+    }
+
+    existing.name = req.body.name;
+    existing.username = existing.username || makeUsername(req.body.email);
+    existing.password = req.body.password;
+    existing.securityQuestion = req.body.securityQuestion;
+    await existing.setSecurityAnswer(req.body.securityAnswer);
+    await existing.save();
+    await ensureDefaultWorkspace(existing);
+
+    const token = signToken(existing);
+    setAuthCookie(res, token);
+    return res.status(200).json({ user: publicUser(existing), token, message: "Account setup completed" });
+  }
 
   const user = new User({
     name: req.body.name,
@@ -53,13 +91,7 @@ export const register = asyncHandler(async (req, res) => {
   await user.setSecurityAnswer(req.body.securityAnswer);
   await user.save();
 
-  await Workspace.create({
-    name: `${user.name}'s Workspace`,
-    description: "Your TaskFlow workspace",
-    owner: user._id,
-    inviteCode: crypto.randomBytes(8).toString("hex"),
-    members: [{ user: user._id, role: "Owner" }],
-  });
+  await ensureDefaultWorkspace(user);
 
   const token = signToken(user);
   setAuthCookie(res, token);
@@ -159,8 +191,9 @@ export const resetPassword = asyncHandler(async (req, res) => {
 export const logout = asyncHandler(async (_req, res) => {
   res.clearCookie("taskflow_token", {
     httpOnly: true,
-    sameSite: env.nodeEnv === "production" ? "none" : "lax",
-    secure: env.nodeEnv === "production",
+    sameSite: env.isProduction ? "none" : "lax",
+    secure: env.isProduction,
+    path: "/",
   });
   res.json({ message: "Logged out" });
 });
@@ -168,5 +201,6 @@ export const logout = asyncHandler(async (_req, res) => {
 export const oauthSuccess = asyncHandler(async (req, res) => {
   const token = signToken(req.user);
   setAuthCookie(res, token);
-  res.redirect(`${env.clientUrl}/`);
+  const redirectPath = req.oauthRedirectPath?.startsWith("/") ? req.oauthRedirectPath : "/dashboard";
+  res.redirect(`${env.clientUrl}${redirectPath}`);
 });

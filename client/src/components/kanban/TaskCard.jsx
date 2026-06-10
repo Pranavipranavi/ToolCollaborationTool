@@ -36,7 +36,7 @@ const TaskCard = forwardRef(function TaskCard({ task, members, onOpen, draggable
       <div className="mt-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <img src={assignee?.avatar} alt={assignee?.name} className="h-7 w-7 rounded-lg object-cover" />
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{assignee?.name.split(" ")[0]}</span>
+          <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{assignee?.name?.split(" ")[0] ?? "Unassigned"}</span>
         </div>
         <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
           <span className="inline-flex items-center gap-1">

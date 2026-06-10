@@ -10,7 +10,7 @@ workspaceRouter.get("/", listWorkspaces);
 workspaceRouter.post("/", workspaceRules, validate, createWorkspace);
 workspaceRouter.post("/join", joinWorkspace);
 workspaceRouter.post("/invitations/accept", acceptInvitation);
-workspaceRouter.patch("/:workspaceId", requireWorkspaceRole("Owner", "Admin"), workspaceRules, validate, updateWorkspace);
+workspaceRouter.patch("/:workspaceId", requireWorkspaceRole("Owner"), workspaceRules, validate, updateWorkspace);
 workspaceRouter.delete("/:workspaceId", requireWorkspaceRole("Owner"), deleteWorkspace);
 workspaceRouter.post("/:workspaceId/leave", requireWorkspaceRole("Admin", "Member"), leaveWorkspace);
 workspaceRouter.get("/:workspaceId/invitations", requireWorkspaceRole("Owner", "Admin"), listInvitations);

@@ -10,6 +10,7 @@ import { useTaskflowStore } from "./store/useTaskflowStore";
 
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const Landing = lazy(() => import("./pages/Landing"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Profile = lazy(() => import("./pages/Profile"));
@@ -50,6 +51,7 @@ export default function App() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Page><Landing /></Page>} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<Page><ForgotPassword /></Page>} />
@@ -60,7 +62,7 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Page><Dashboard /></Page>} />
+          <Route path="/dashboard" element={<Page><Dashboard /></Page>} />
           <Route path="/analytics" element={<Page><Dashboard /></Page>} />
           <Route path="/board" element={<Page><ProjectBoard /></Page>} />
           <Route path="/workspace" element={<Page><Workspace /></Page>} />

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useCommentMutations, useComments, useTaskMutations } from "../../hooks/useTaskflowData";
 import Button from "../ui/Button";
 
-export default function TaskDetailModal({ task, activeWorkspaceId, activeProjectId, members = [], onClose }) {
+export default function TaskDetailModal({ task, activeWorkspaceId, activeProjectId, currentRole, currentUserId, members = [], onClose }) {
   const [body, setBody] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editingBody, setEditingBody] = useState("");
@@ -13,6 +13,9 @@ export default function TaskDetailModal({ task, activeWorkspaceId, activeProject
   const taskMutations = useTaskMutations(activeWorkspaceId, activeProjectId);
   const commentMutations = useCommentMutations(activeWorkspaceId, task?.id, activeProjectId);
   const assignee = task?.assignee ?? members.find((member) => member.id === task?.assignedUser);
+  const canManageTasks = ["Owner", "Admin"].includes(currentRole);
+  const canUpdateAssignedStatus = currentRole === "Member" && task?.assignedUser === currentUserId;
+  const canEditTask = canManageTasks || canUpdateAssignedStatus;
 
   useEffect(() => {
     if (task) {
@@ -39,17 +42,22 @@ export default function TaskDetailModal({ task, activeWorkspaceId, activeProject
 
   function saveTask(event) {
     event.preventDefault();
+    if (!canEditTask) return;
+    const payload = canManageTasks
+      ? {
+          ...draft,
+          tags: draft.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
+          dueDate: draft.dueDate,
+        }
+      : { status: draft.status };
     taskMutations.update.mutate({
       taskId: task.id,
-      payload: {
-        ...draft,
-        tags: draft.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
-        dueDate: draft.dueDate,
-      },
+      payload,
     }, { onSuccess: onClose });
   }
 
   function removeTask() {
+    if (!canManageTasks) return;
     taskMutations.delete.mutate(task.id, { onSuccess: onClose });
   }
 
@@ -87,24 +95,40 @@ export default function TaskDetailModal({ task, activeWorkspaceId, activeProject
 
             <div className="grid max-h-[calc(90vh-9rem)] gap-5 overflow-y-auto p-5 lg:grid-cols-[0.7fr_1fr]">
               <aside className="space-y-4">
-                {draft && (
+                {draft && canEditTask && (
                   <form className="space-y-3 rounded-lg bg-slate-50 p-4 dark:bg-slate-800" onSubmit={saveTask}>
-                    <label className="block text-xs font-bold uppercase text-slate-500">Title<input className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm normal-case dark:border-slate-700 dark:bg-slate-950" value={draft.title} onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} required /></label>
-                    <label className="block text-xs font-bold uppercase text-slate-500">Description<textarea className="mt-2 min-h-20 w-full rounded-lg border border-slate-200 p-3 text-sm normal-case dark:border-slate-700 dark:bg-slate-950" value={draft.description} onChange={(event) => setDraft((value) => ({ ...value, description: event.target.value }))} /></label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <select className="h-10 rounded-lg border border-slate-200 px-2 text-sm dark:border-slate-700 dark:bg-slate-950" value={draft.status} onChange={(event) => setDraft((value) => ({ ...value, status: event.target.value }))}>{["To Do", "In Progress", "Review", "Completed"].map((status) => <option key={status}>{status}</option>)}</select>
-                      <select className="h-10 rounded-lg border border-slate-200 px-2 text-sm dark:border-slate-700 dark:bg-slate-950" value={draft.priority} onChange={(event) => setDraft((value) => ({ ...value, priority: event.target.value }))}>{["Low", "Medium", "High", "Critical"].map((priority) => <option key={priority}>{priority}</option>)}</select>
-                    </div>
-                    <select className="h-10 w-full rounded-lg border border-slate-200 px-2 text-sm dark:border-slate-700 dark:bg-slate-950" value={draft.assignedUser ?? ""} onChange={(event) => setDraft((value) => ({ ...value, assignedUser: event.target.value }))}>
-                      {members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
-                    </select>
-                    <input className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm dark:border-slate-700 dark:bg-slate-950" type="date" value={draft.dueDate} onChange={(event) => setDraft((value) => ({ ...value, dueDate: event.target.value }))} />
-                    <input className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm dark:border-slate-700 dark:bg-slate-950" value={draft.tags} onChange={(event) => setDraft((value) => ({ ...value, tags: event.target.value }))} placeholder="Tags, comma separated" />
+                    {canManageTasks && (
+                      <>
+                        <label className="block text-xs font-bold uppercase text-slate-500">Title<input className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm normal-case dark:border-slate-700 dark:bg-slate-950" value={draft.title} onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} required /></label>
+                        <label className="block text-xs font-bold uppercase text-slate-500">Description<textarea className="mt-2 min-h-20 w-full rounded-lg border border-slate-200 p-3 text-sm normal-case dark:border-slate-700 dark:bg-slate-950" value={draft.description} onChange={(event) => setDraft((value) => ({ ...value, description: event.target.value }))} /></label>
+                      </>
+                    )}
+                    <label className="block text-xs font-bold uppercase text-slate-500">
+                      Status
+                      <select className="mt-2 h-10 w-full rounded-lg border border-slate-200 px-2 text-sm normal-case dark:border-slate-700 dark:bg-slate-950" value={draft.status} onChange={(event) => setDraft((value) => ({ ...value, status: event.target.value }))}>
+                        {["To Do", "In Progress", "Review", "Completed"].map((status) => <option key={status}>{status}</option>)}
+                      </select>
+                    </label>
+                    {canManageTasks && (
+                      <>
+                        <select className="h-10 rounded-lg border border-slate-200 px-2 text-sm dark:border-slate-700 dark:bg-slate-950" value={draft.priority} onChange={(event) => setDraft((value) => ({ ...value, priority: event.target.value }))}>{["Low", "Medium", "High", "Critical"].map((priority) => <option key={priority}>{priority}</option>)}</select>
+                        <select className="h-10 w-full rounded-lg border border-slate-200 px-2 text-sm dark:border-slate-700 dark:bg-slate-950" value={draft.assignedUser ?? ""} onChange={(event) => setDraft((value) => ({ ...value, assignedUser: event.target.value }))}>
+                          {members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+                        </select>
+                        <input className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm dark:border-slate-700 dark:bg-slate-950" type="date" value={draft.dueDate} onChange={(event) => setDraft((value) => ({ ...value, dueDate: event.target.value }))} />
+                        <input className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm dark:border-slate-700 dark:bg-slate-950" value={draft.tags} onChange={(event) => setDraft((value) => ({ ...value, tags: event.target.value }))} placeholder="Tags, comma separated" />
+                      </>
+                    )}
                     <div className="flex gap-2">
-                      <Button className="flex-1" type="submit" disabled={taskMutations.update.isPending}><Save size={16} /> Save</Button>
-                      <Button className="flex-1 text-rose-600 dark:text-rose-300" variant="ghost" type="button" onClick={removeTask} disabled={taskMutations.delete.isPending}><Trash2 size={16} /> Delete</Button>
+                      <Button className="flex-1" type="submit" disabled={taskMutations.update.isPending}><Save size={16} /> {canManageTasks ? "Save" : "Save status"}</Button>
+                      {canManageTasks && <Button className="flex-1 text-rose-600 dark:text-rose-300" variant="ghost" type="button" onClick={removeTask} disabled={taskMutations.delete.isPending}><Trash2 size={16} /> Delete</Button>}
                     </div>
                   </form>
+                )}
+                {draft && !canEditTask && (
+                  <div className="rounded-lg bg-slate-50 p-4 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                    You can view this task and comment on it. Only owners, admins, or the assigned member can update task status.
+                  </div>
                 )}
                 <div className="rounded-lg bg-slate-50 p-4 dark:bg-slate-800">
                   <p className="text-xs font-bold uppercase text-slate-500">Assignee</p>
@@ -167,10 +191,12 @@ export default function TaskDetailModal({ task, activeWorkspaceId, activeProject
                               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">{comment.body}</p>
                             )}
                           </div>
-                          <div className="flex gap-1">
-                            <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => { setEditingId(comment.id); setEditingBody(comment.body); }} aria-label="Edit comment"><Pencil size={15} /></button>
-                            <button className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950" onClick={() => commentMutations.delete.mutate(comment.id)} aria-label="Delete comment"><Trash2 size={15} /></button>
-                          </div>
+                          {comment.userId === currentUserId && (
+                            <div className="flex gap-1">
+                              <button className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => { setEditingId(comment.id); setEditingBody(comment.body); }} aria-label="Edit comment"><Pencil size={15} /></button>
+                              <button className="rounded-lg p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950" onClick={() => commentMutations.delete.mutate(comment.id)} aria-label="Delete comment"><Trash2 size={15} /></button>
+                            </div>
+                          )}
                         </div>
                       </article>
                     );

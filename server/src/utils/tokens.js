@@ -8,8 +8,9 @@ export function signToken(user) {
 export function setAuthCookie(res, token) {
   res.cookie("taskflow_token", token, {
     httpOnly: true,
-    secure: env.nodeEnv === "production",
-    sameSite: env.nodeEnv === "production" ? "none" : "lax",
+    secure: env.isProduction,
+    sameSite: env.isProduction ? "none" : "lax",
+    path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }

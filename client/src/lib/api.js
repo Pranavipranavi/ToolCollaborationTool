@@ -1,7 +1,8 @@
 import axios from "axios";
+import { clientEnv } from "./env";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:5000/api",
+  baseURL: clientEnv.apiUrl,
   withCredentials: true,
 });
 
@@ -61,7 +62,7 @@ export const notificationApi = {
 };
 
 export const analyticsApi = {
-  dashboard: () => api.get("/analytics/dashboard").then((res) => res.data),
+  dashboard: (workspaceId) => api.get("/analytics/dashboard", { params: workspaceId ? { workspaceId } : undefined }).then((res) => res.data),
 };
 
 export const activityApi = {

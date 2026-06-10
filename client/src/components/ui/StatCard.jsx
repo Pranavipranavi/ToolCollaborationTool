@@ -1,6 +1,35 @@
 import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 
 export default function StatCard({ icon: Icon, label, value, delta, tone = "blue" }) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const numericValue = useMemo(() => {
+    if (typeof value === "number") return { amount: value, suffix: "" };
+    if (typeof value === "string" && /^\d+%?$/.test(value)) {
+      return { amount: Number(value.replace("%", "")), suffix: value.endsWith("%") ? "%" : "" };
+    }
+    return null;
+  }, [value]);
+
+  useEffect(() => {
+    if (!numericValue) {
+      setDisplayValue(value);
+      return undefined;
+    }
+
+    let frameId;
+    const start = performance.now();
+    const duration = 600;
+    const tick = (time) => {
+      const progress = Math.min((time - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayValue(`${Math.round(numericValue.amount * eased)}${numericValue.suffix}`);
+      if (progress < 1) frameId = requestAnimationFrame(tick);
+    };
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [numericValue, value]);
+
   const tones = {
     blue: "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-300",
     pink: "bg-pink-50 text-pink-600 dark:bg-pink-950/50 dark:text-pink-300",
@@ -12,12 +41,13 @@ export default function StatCard({ icon: Icon, label, value, delta, tone = "blue
     <motion.section
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -3 }}
       className="rounded-lg border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-800 dark:bg-slate-900"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-950 dark:text-white">{value}</p>
+          <p className="mt-2 text-3xl font-bold text-slate-950 dark:text-white">{displayValue}</p>
         </div>
         <span className={`rounded-lg p-2.5 ${tones[tone]}`}>
           <Icon size={20} />

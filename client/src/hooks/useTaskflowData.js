@@ -8,7 +8,7 @@ export const qk = {
   tasks: (workspaceId, projectId, filters = {}) => ["tasks", workspaceId, projectId, filters],
   comments: (workspaceId, taskId) => ["comments", workspaceId, taskId],
   notifications: ["notifications"],
-  analytics: ["analytics"],
+  analytics: (workspaceId = "all") => ["analytics", workspaceId || "all"],
   activities: (workspaceId) => ["activities", workspaceId],
   invitations: (workspaceId) => ["invitations", workspaceId],
   search: (query) => ["search", query],
@@ -65,10 +65,10 @@ export function useNotifications() {
   });
 }
 
-export function useDashboard() {
+export function useDashboard(workspaceId) {
   return useQuery({
-    queryKey: qk.analytics,
-    queryFn: () => analyticsApi.dashboard().then((data) => ({
+    queryKey: qk.analytics(workspaceId),
+    queryFn: () => analyticsApi.dashboard(workspaceId).then((data) => ({
       ...data,
       activities: (data.activities ?? []).map(normalizeActivity),
     })),
@@ -151,6 +151,10 @@ export function useProjectMutations(workspaceId) {
       mutationFn: (payload) => projectApi.create(workspaceId, payload),
       onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.projects(workspaceId) }),
     }),
+    update: useMutation({
+      mutationFn: ({ projectId, payload }) => projectApi.update(workspaceId, projectId, payload),
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.projects(workspaceId) }),
+    }),
     archive: useMutation({
       mutationFn: (projectId) => projectApi.archive(workspaceId, projectId),
       onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.projects(workspaceId) }),
@@ -166,7 +170,7 @@ export function useTaskMutations(workspaceId, projectId) {
   const queryClient = useQueryClient();
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["tasks", workspaceId, projectId] });
-    queryClient.invalidateQueries({ queryKey: qk.analytics });
+    queryClient.invalidateQueries({ queryKey: ["analytics"] });
     queryClient.invalidateQueries({ queryKey: qk.activities(workspaceId) });
   };
   return {

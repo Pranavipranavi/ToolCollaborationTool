@@ -41,6 +41,10 @@ function buildTaskQuery(req) {
   return filter;
 }
 
+function isWorkspaceMember(workspace, userId) {
+  return workspace.members.some((member) => member.user.toString() === userId.toString());
+}
+
 export const listTasks = asyncHandler(async (req, res) => {
   const tasks = await Task.find(buildTaskQuery(req)).populate("assignedUser", "name email avatar").sort({ createdAt: -1 });
   const counts = await Comment.aggregate([
@@ -68,6 +72,9 @@ export const listAssignedTasks = asyncHandler(async (req, res) => {
 export const createTask = asyncHandler(async (req, res) => {
   const project = await Project.findOne({ _id: req.params.projectId, workspace: req.params.workspaceId });
   if (!project) throw new ApiError(404, "Project not found");
+  if (req.body.assignedUser && !isWorkspaceMember(req.workspace, req.body.assignedUser)) {
+    throw new ApiError(400, "Assigned user must be a workspace member");
+  }
 
   const task = await Task.create({
     ...req.body,
@@ -96,6 +103,9 @@ export const updateTask = asyncHandler(async (req, res) => {
     const blockedField = Object.keys(req.body).find((field) => !allowedFields.includes(field));
     if (blockedField) throw new ApiError(403, "Members can only update task status");
   }
+  if (req.body.assignedUser && !isWorkspaceMember(req.workspace, req.body.assignedUser)) {
+    throw new ApiError(400, "Assigned user must be a workspace member");
+  }
 
   const task = await Task.findOneAndUpdate({ _id: req.params.taskId, workspace: req.params.workspaceId, project: req.params.projectId }, req.body, { new: true }).populate("assignedUser", "name email avatar");
   if (req.body.assignedUser && before.assignedUser?.toString() !== req.body.assignedUser) {
@@ -117,6 +127,7 @@ export const deleteTask = asyncHandler(async (req, res) => {
   if (!task) throw new ApiError(404, "Task not found");
 
   await Comment.deleteMany({ task: req.params.taskId });
+  await recordActivity({ workspace: req.params.workspaceId, actor: req.user._id, action: "deleted", targetType: "Task", targetName: task.title });
   await task.deleteOne();
   emitToWorkspace(req.params.workspaceId, "task:deleted", { id: req.params.taskId });
   res.json({ message: "Task deleted" });

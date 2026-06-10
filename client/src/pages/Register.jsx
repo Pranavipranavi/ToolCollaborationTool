@@ -12,6 +12,8 @@ export default function Register() {
   const [form, setForm] = useState({ name: "", email: "", password: "", securityQuestion: SECURITY_QUESTIONS[0], securityAnswer: "" });
   const [error, setError] = useState("");
   const inviteToken = new URLSearchParams(window.location.search).get("invite");
+  const loginPath = inviteToken ? `/login?invite=${encodeURIComponent(inviteToken)}` : "/login";
+  const isExistingAccountError = error.toLowerCase().includes("already registered");
   const registerMutation = useMutation({
     mutationFn: async (payload) => {
       const data = await authApi.register(payload);
@@ -20,10 +22,13 @@ export default function Register() {
     },
     onSuccess: (data) => {
       login(data.user);
-      navigate("/", { replace: true });
+      navigate(inviteToken ? "/workspace?invite=accepted" : "/dashboard", { replace: true });
     },
-    onError: () => {
-      setError("Registration failed. Check your email, password, and security answer.");
+    onError: (requestError) => {
+      const message = requestError?.response?.data?.message;
+      const details = requestError?.response?.data?.details;
+      const validationMessage = Array.isArray(details) && details[0]?.msg ? details[0].msg : null;
+      setError(message || validationMessage || "Registration failed. Check your details and try again.");
     },
   });
 
@@ -52,11 +57,21 @@ export default function Register() {
             {SECURITY_QUESTIONS.map((question) => <option key={question}>{question}</option>)}
           </select>
           <input className="h-12 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-primary-light dark:border-slate-800 dark:bg-slate-950 dark:text-white" placeholder="Security answer" value={form.securityAnswer} onChange={(event) => updateField("securityAnswer", event.target.value)} autoComplete="off" minLength={2} maxLength={120} required />
-          {error && <p className="rounded-lg bg-rose-50 p-3 text-sm font-semibold text-rose-700 dark:bg-rose-950 dark:text-rose-200">{error}</p>}
+          {error && (
+            <div className="rounded-lg bg-rose-50 p-3 text-sm font-semibold text-rose-700 dark:bg-rose-950 dark:text-rose-200">
+              <p>{error}</p>
+              {isExistingAccountError && (
+                <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                  <Link to={loginPath} className="text-primary-light underline underline-offset-4 dark:text-primary-dark">Login instead</Link>
+                  <Link to="/forgot-password" className="text-primary-light underline underline-offset-4 dark:text-primary-dark">Reset password</Link>
+                </div>
+              )}
+            </div>
+          )}
           <Button className="w-full" disabled={registerMutation.isPending}>{registerMutation.isPending ? "Creating account" : "Register"}</Button>
         </form>
         <p className="mt-6 text-sm text-slate-500">
-          Already have an account? <Link to="/login" className="font-semibold text-primary-light dark:text-primary-dark">Login</Link>
+          Already have an account? <Link to={loginPath} className="font-semibold text-primary-light dark:text-primary-dark">Login</Link>
         </p>
       </section>
     </main>

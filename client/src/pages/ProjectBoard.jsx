@@ -6,10 +6,11 @@ import { useProjects, useTasks, useWorkspaces } from "../hooks/useTaskflowData";
 import { useTaskflowStore } from "../store/useTaskflowStore";
 
 export default function ProjectBoard() {
-  const { activeProjectId, activeWorkspaceId, filters, search, setActiveProject, setFilter } = useTaskflowStore();
+  const { activeProjectId, activeWorkspaceId, filters, search, user, setActiveProject, setFilter } = useTaskflowStore();
   const { data: workspaces = [] } = useWorkspaces();
   const workspace = workspaces.find((item) => item.id === activeWorkspaceId);
   const members = workspace?.members ?? [];
+  const currentRole = members.find((member) => member.id === user?.id)?.role;
   const { data: projects = [], isLoading: projectsLoading } = useProjects(activeWorkspaceId);
   const activeProject = projects.find((project) => project.id === activeProjectId) ?? projects[0];
   const taskFilters = { ...filters, search };
@@ -41,7 +42,15 @@ export default function ProjectBoard() {
       ) : !activeProject ? (
         <EmptyState title="No active project" body="Create a project in the workspace view before adding tasks." />
       ) : (
-        <KanbanBoard activeProject={activeProject} activeWorkspaceId={activeWorkspaceId} members={members} tasks={tasks} loading={tasksLoading} />
+        <KanbanBoard
+          activeProject={activeProject}
+          activeWorkspaceId={activeWorkspaceId}
+          currentRole={currentRole}
+          currentUserId={user?.id}
+          members={members}
+          tasks={tasks}
+          loading={tasksLoading}
+        />
       )}
     </div>
   );

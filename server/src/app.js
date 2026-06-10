@@ -21,11 +21,7 @@ import { requireTrustedOrigin } from "./middleware/security.middleware.js";
 
 export const app = express();
 
-const allowedOrigins = new Set([
-  env.clientUrl,
-  env.clientUrl.replace("localhost", "127.0.0.1"),
-  env.clientUrl.replace("127.0.0.1", "localhost"),
-]);
+const allowedOrigins = new Set(env.allowedOrigins);
 
 app.set("trust proxy", 1);
 app.use(helmet());

@@ -5,7 +5,7 @@ import { Workspace } from "../models/Workspace.js";
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { recordActivity } from "../services/activity.service.js";
-import { notify } from "../services/notification.service.js";
+import { acceptWorkspaceInvitation } from "../services/invitation.service.js";
 import { env } from "../config/env.js";
 
 export const workspaceRules = [body("name").trim().notEmpty().isLength({ max: 80 }), body("description").optional().trim().isLength({ max: 300 })];
@@ -25,6 +25,7 @@ export const createWorkspace = asyncHandler(async (req, res) => {
     members: [{ user: req.user._id, role: "Owner" }],
   });
   await recordActivity({ workspace: workspace._id, actor: req.user._id, action: "created", targetType: "Workspace", targetName: workspace.name });
+  await workspace.populate("members.user", "name email avatar");
   res.status(201).json({ workspace });
 });
 
@@ -61,34 +62,14 @@ export const createInvitation = asyncHandler(async (req, res) => {
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 
-  const inviteUrl = `${env.clientUrl}/register?invite=${rawToken}`;
+  const inviteUrl = `${env.clientUrl}/login?invite=${rawToken}`;
 
   await recordActivity({ workspace: req.params.workspaceId, actor: req.user._id, action: "invited", targetType: "Member", targetName: email, metadata: { role } });
   res.status(201).json({ invitation, inviteUrl });
 });
 
 export const acceptInvitation = asyncHandler(async (req, res) => {
-  if (!req.body.token) throw new ApiError(400, "Invitation token is required");
-
-  const tokenHash = crypto.createHash("sha256").update(req.body.token).digest("hex");
-  const invitation = await Invitation.findOne({ tokenHash, acceptedAt: { $exists: false }, expiresAt: { $gt: new Date() } });
-  if (!invitation) throw new ApiError(404, "Invitation is invalid or expired");
-  if (invitation.email !== req.user.email) throw new ApiError(403, "Invitation email does not match your account");
-
-  const workspace = await Workspace.findById(invitation.workspace);
-  if (!workspace) throw new ApiError(404, "Workspace not found");
-
-  const existing = workspace.members.find((member) => member.user.toString() === req.user._id.toString());
-  if (existing) {
-    existing.role = existing.role === "Owner" ? "Owner" : invitation.role;
-  } else {
-    workspace.members.push({ user: req.user._id, role: invitation.role });
-  }
-  invitation.acceptedAt = new Date();
-
-  await Promise.all([workspace.save(), invitation.save()]);
-  await recordActivity({ workspace: workspace._id, actor: req.user._id, action: "accepted invite", targetType: "Workspace", targetName: workspace.name });
-  await notify({ user: workspace.owner, workspace: workspace._id, type: "Member Joined", title: "Member joined", body: `${req.user.name} joined ${workspace.name}`, entity: { kind: "Workspace", id: workspace._id } });
+  const workspace = await acceptWorkspaceInvitation({ token: req.body.token, user: req.user });
   res.json({ workspace });
 });
 
@@ -120,6 +101,7 @@ export const removeMember = asyncHandler(async (req, res) => {
 
 export const deleteWorkspace = asyncHandler(async (req, res) => {
   if (req.membership.role !== "Owner") throw new ApiError(403, "Only owners can delete workspaces");
+  await recordActivity({ workspace: req.workspace._id, actor: req.user._id, action: "deleted", targetType: "Workspace", targetName: req.workspace.name });
   await req.workspace.deleteOne();
   res.json({ message: "Workspace deleted" });
 });
@@ -142,5 +124,6 @@ export const leaveWorkspace = asyncHandler(async (req, res) => {
   if (req.membership.role === "Owner") throw new ApiError(400, "Transfer ownership before leaving");
   req.workspace.members = req.workspace.members.filter((member) => member.user.toString() !== req.user._id.toString());
   await req.workspace.save();
+  await recordActivity({ workspace: req.workspace._id, actor: req.user._id, action: "left", targetType: "Workspace", targetName: req.workspace.name });
   res.json({ message: "Workspace left" });
 });

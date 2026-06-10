@@ -24,9 +24,10 @@ export default function AppShell() {
     socket.emit("workspace:join", activeWorkspaceId);
 
     const invalidateTasks = () => queryClient.invalidateQueries({ queryKey: ["tasks", activeWorkspaceId] });
+    const invalidateProjects = () => queryClient.invalidateQueries({ queryKey: qk.projects(activeWorkspaceId) });
     const invalidateComments = () => queryClient.invalidateQueries({ queryKey: ["comments", activeWorkspaceId] });
     const invalidateActivity = () => queryClient.invalidateQueries({ queryKey: qk.activities(activeWorkspaceId) });
-    const invalidateAnalytics = () => queryClient.invalidateQueries({ queryKey: qk.analytics });
+    const invalidateAnalytics = () => queryClient.invalidateQueries({ queryKey: ["analytics"] });
     const invalidateAssignedTasks = () => queryClient.invalidateQueries({ queryKey: qk.assignedTasks });
     const invalidateNotifications = () => queryClient.invalidateQueries({ queryKey: qk.notifications });
     const invalidateTaskRelated = () => {
@@ -43,9 +44,12 @@ export default function AppShell() {
     socket.on("task:created", invalidateTaskRelated);
     socket.on("task:updated", invalidateTaskRelated);
     socket.on("task:deleted", invalidateTaskRelated);
+    socket.on("project:updated", invalidateProjects);
+    socket.on("project:deleted", invalidateProjects);
     socket.on("comment:created", invalidateCommentRelated);
     socket.on("comment:updated", invalidateCommentRelated);
     socket.on("comment:deleted", invalidateCommentRelated);
+    socket.on("activity:created", invalidateTaskRelated);
     socket.on("notification:created", invalidateNotifications);
 
     return () => {
@@ -53,9 +57,12 @@ export default function AppShell() {
       socket.off("task:created", invalidateTaskRelated);
       socket.off("task:updated", invalidateTaskRelated);
       socket.off("task:deleted", invalidateTaskRelated);
+      socket.off("project:updated", invalidateProjects);
+      socket.off("project:deleted", invalidateProjects);
       socket.off("comment:created", invalidateCommentRelated);
       socket.off("comment:updated", invalidateCommentRelated);
       socket.off("comment:deleted", invalidateCommentRelated);
+      socket.off("activity:created", invalidateTaskRelated);
       socket.off("notification:created", invalidateNotifications);
     };
   }, [activeWorkspaceId, queryClient]);
