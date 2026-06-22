@@ -2,8 +2,8 @@
 
 ### Internship Project Submission
 * **Organization:** Codtech IT Solutions Private Limited
-* **Intern ID:** CITS1993
-* **Full Name:** Naguru Suhas
+* **Intern ID:** CITS1983
+* **Full Name:** Sai Pranavi
 * **Duration:** 8 Weeks (April 2026 – June 2026)
 * **Domain:** Full-Stack Web Development
 
