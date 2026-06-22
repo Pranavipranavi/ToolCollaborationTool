@@ -345,4 +345,4 @@ Playwright tests run in isolated context files inside `/tests/e2e`:
 
 ## 23. Conclusion
 
-**TaskFlow** represents a professional, portfolio-grade project management application. Under the 8-week internship at Codtech IT Solutions Private Limited, Naguru Suhas successfully engineered the database schemas, built Express controllers, designed a beautiful responsive interface, configured JWT and Google OAuth authentication mechanisms, and secured the system using modern middleware, completing all criteria for a successful internship submission.
+**TaskFlow** represents a professional, portfolio-grade project management application. Under the 8-week internship at Codtech IT Solutions Private Limited, Sai Pranavi successfully engineered the database schemas, built Express controllers, designed a beautiful responsive interface, configured JWT and Google OAuth authentication mechanisms, and secured the system using modern middleware, completing all criteria for a successful internship submission.
