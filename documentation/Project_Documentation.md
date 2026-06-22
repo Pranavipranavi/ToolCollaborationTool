@@ -4,7 +4,7 @@
 
 **Project Title:** TaskFlow – Task Collaboration & Team Productivity Platform  
 **Organization:** Codtech IT Solutions Private Limited  
-**Author:** Naguru Suhas (Intern ID: CITS1993)  
+**Author:** Sai Pranavi (Intern ID: CITS1983)  
 **Role:** Full-Stack Development Intern  
 **Date:** June 2026  
 
