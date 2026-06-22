@@ -69,4 +69,4 @@ While the repository is fully submission-ready, the following operational steps 
 
 **Status:** **APPROVED FOR SUBMISSION**
 
-The repository is in **pristine condition** and is fully ready for evaluation by the internship coordinators at Codtech IT Solutions Private Limited. The addition of structured documentation, visual walkthroughs, and clean seeder setups elevates the value of this repository, making it an excellent centerpiece for Naguru Suhas's technical portfolio.
+The repository is in **pristine condition** and is fully ready for evaluation by the internship coordinators at Codtech IT Solutions Private Limited. The addition of structured documentation, visual walkthroughs, and clean seeder setups elevates the value of this repository, making it an excellent centerpiece for Sai Pranavi's technical portfolio.
