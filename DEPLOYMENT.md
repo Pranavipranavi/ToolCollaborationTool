@@ -17,7 +17,7 @@ TaskFlow consists of a React single-page frontend (using Vite) and a Node.js Exp
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/sunnysuhas/Task-Collaboration-Tool.git
+   git clone https://github.com/Pranavipranavi/Task-Collaboration-Tool.git
    cd Task-Collaboration-Tool
    ```
 
