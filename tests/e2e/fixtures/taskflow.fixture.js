@@ -1,7 +1,7 @@
 import { expect, test as base } from "@playwright/test";
 
-export const apiBaseUrl = process.env.PLAYWRIGHT_API_URL || "http://localhost:5000/api";
-export const appBaseUrl = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:5173";
+export const apiBaseUrl = process.env.PLAYWRIGHT_API_URL || "http://localhost:5082/api";
+export const appBaseUrl = process.env.PLAYWRIGHT_BASE_URL || "http://localhost:5182";
 export const e2ePassword = "TaskFlow#2026";
 export const securityQuestion = "What was your first school?";
 export const securityAnswer = "school";
