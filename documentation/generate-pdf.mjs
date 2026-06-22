@@ -56,8 +56,8 @@ const boxTop = doc.y;
 doc.rect(100, boxTop, doc.page.width - 200, 140).fill("#1e293b");
 
 doc.fillColor("#38bdf8").fontSize(10).font("Helvetica-Bold").text("INTERN PROFILE", 120, boxTop + 15);
-doc.fillColor("#ffffff").fontSize(12).font("Helvetica-Bold").text("Name: Naguru Suhas", 120, boxTop + 35);
-doc.fillColor("#e2e8f0").fontSize(11).font("Helvetica").text("Intern ID: CITS1993", 120, boxTop + 55);
+doc.fillColor("#ffffff").fontSize(12).font("Helvetica-Bold").text("Name: Sai Pranavi", 120, boxTop + 35);
+doc.fillColor("#e2e8f0").fontSize(11).font("Helvetica").text("Intern ID: CITS1983", 120, boxTop + 55);
 doc.text("Domain: Full-Stack Web Development", 120, boxTop + 75);
 doc.text("Duration: 8 Weeks (April - June 2026)", 120, boxTop + 95);
 
@@ -220,7 +220,7 @@ for (let i = range.start + 1; i < range.start + range.count; i++) {
   
   // Footer
   doc.moveTo(50, doc.page.height - 35).lineTo(doc.page.width - 50, doc.page.height - 35).strokeColor(colors.border).lineWidth(0.5).stroke();
-  doc.fontSize(8).fillColor(colors.lightText).font("Helvetica").text(`Naguru Suhas | Intern ID: CITS1993`, 50, doc.page.height - 28);
+  doc.fontSize(8).fillColor(colors.lightText).font("Helvetica").text(`Sai Pranavi | Intern ID: CITS1983`, 50, doc.page.height - 28);
   doc.text(`Page ${i + 1}`, doc.page.width - 100, doc.page.height - 28, { align: "right" });
   doc.restore();
 }
