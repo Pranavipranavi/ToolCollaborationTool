@@ -1,6 +1,6 @@
 # Internship Submission Checklist – TaskFlow
 
-This document presents a complete audit of the repository, deliverables, and scores for the project submission by **Naguru Suhas** (Intern ID: **CITS1993**) for the Full-Stack Web Development internship at **Codtech IT Solutions Private Limited**.
+This document presents a complete audit of the repository, deliverables, and scores for the project submission by **Sai Pranavi** (Intern ID: **CITS1983**) for the Full-Stack Web Development internship at **Codtech IT Solutions Private Limited**.
 
 ---
 
